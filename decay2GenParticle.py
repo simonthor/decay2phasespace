@@ -1,42 +1,77 @@
-from pprint import pprint
-
-from decaylanguage import DecayChain, DecayMode
 #from phasespace import GenParticle
 #from particle import Particle
 
+import tensorflow as tf
+import numpy as np
 
-def to_GenParticle(decaychain):
-    """Return the decay chain as a phasespace.GenParticle.
-    The format is the same as `DecFileParser.build_decay_chains(...)`.
-    Examples
-    --------
-    >>> dm1 = DecayMode(0.028, 'K_S0 pi+ pi-')
-    >>> dm2 = DecayMode(0.692, 'pi+ pi-')
-    >>> dc = DecayChain('D0', {'D0':dm1, 'K_S0':dm2})
-    >>> to_GenParticle(dc)
-    {'D0': [{'bf': 0.028,
-        'fs': [{'K_S0': [{'bf': 0.692,
-            'fs': ['pi+', 'pi-'],
-            'model': '',
-            'model_params': ''}]},
-         'pi+',
-         'pi-'],
-        'model': '',
-        'model_params': ''}]}
+def recursively_traverse(decaychain: dict) -> GenParticle:
+    """Create a random GenParticle by recursively traversing a dict from decaylanguage.
+
+
+    Parameters
+    ----------
+    decaychain: dict
+
+    Returns
+    -------
+    particle : GenParticle
+        The generated particle
+
+    Notes
+    -----
+    This implementation is slow since it
+    - gets the particle mass every time from the particle package
+    - relies on an external python for-loop
     """
+    mother = list(decaychain.keys())[0] # Get the only key inside the dict
+    decaymodes = decaychain[mother]
+    # TODO: replace with tnp in the future
+    # TODO: make multiple choices at once in a future version
+    i = np.random.choice(range(len(decaymodes)), p=[dm['bf'] for dm in decaymodes])
+    daughter_particles = decaymodes[i]['fs']
 
-    def recursively_replace(mother):
-        dm = decaychain.decays[mother].to_dict()
-        result = []
-        list_fsp = dm["fs"]
+    daughter_gens = []
+    for daughter_name in daughter_particles:
+        # TODO: implement mass distribution function here
+        if isinstance(daughter_name, str):
+            daughter = GenParticle(daughter_name, Particle.from_string(daughter_name).mass)
+        elif isinstance(daughter_name, dict):
+            daughter = recursively_traverse(daughter_name)
+        else:
+            raise TypeError(f'Expected elements in decaychain["fs"] to only be str or dict '
+                            f'but found of type {type(daughter_name)}')
+        daughter_gens.append(daughter)
 
-        for pos, fsp in enumerate(list_fsp):
-            if fsp in decaychain.decays.keys():
-                list_fsp[pos] = recursively_replace(fsp)
-        result.append(dm)
-        return {mother: result}
+    return GenParticle(mother, Particle.from_string(mother).mass).set_children(*daughter_gens)
 
-    return recursively_replace(decaychain.mother)
+
+def generate_nbody_naive(decaychain: dict, nevents: int) -> list[dict[str, tf.Tensor]]:
+    """Generate events from a full decay
+    Parameters
+    ----------
+    decaychain : dict
+        Dict describing a decay.
+        Can contain multiple different ways that a particle can decay in.
+    nevents : int
+        Number of events that should be generated
+
+    Returns
+    -------
+    events : list[dict[str, tf.Tensor]]
+        list of all the generated events and the four-momenta of the final state particles.
+    Notes
+    -----
+    This implementation is very slow and inefficient.
+    A better version will be made later.
+    """
+    events = []
+    for i in range(nevents):
+        particle = recursively_traverse(decaychain)
+        events.append(particle.generate(1))
+
+    return events
+
+recursively_traverse(d)
 
 
 # TODO: converter from GenParticle to DecayChain
