@@ -50,4 +50,5 @@ def test_generate_nbody_naive():
                   'model': 'PHSP', 'model_params': ''}]
           }
 
-    generate_nbody_naive(dc, 10)
+    events = generate_nbody_naive(dc, 1)
+    print(events)
