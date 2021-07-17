@@ -1,0 +1,11 @@
+name: UZH
+channels:
+  - default
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    - DecayLanguage
+    - phasespace
+    - particle
+    - matplotlib
