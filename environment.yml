@@ -1,4 +1,4 @@
-name: UZH
+name: decay2phasespace
 channels:
   - default
 dependencies:
