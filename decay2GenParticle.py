@@ -56,7 +56,7 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = Non
     Parameters
     ----------
     decaychain: dict
-        Decay chain with the format fro decaylanguage
+        Decay chain with the format from decaylanguage
     preexisting_particles : set
         names of all particles that have already been created.
     Returns
