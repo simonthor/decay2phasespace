@@ -1,5 +1,7 @@
 from decay2GenParticle import recursively_traverse
 import tensorflow as tf
+# TODO: add tests for multiple decays.
+#  This needs a way to specify rng into recursively_traverse
 
 
 def generate_nbody_naive(decaychain: dict, nevents: int) -> tuple[list[tf.Tensor], list[dict[str, tf.Tensor]]]:
