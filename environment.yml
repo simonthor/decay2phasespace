@@ -8,4 +8,3 @@ dependencies:
     - DecayLanguage
     - phasespace
     - particle
-    - matplotlib
