@@ -45,15 +45,3 @@ class TestRecursivelyTraverse:
         for child, exp_name in zip(sorted(grandchildren, key=lambda c: c.name), sorted(['gamma', 'gamma [0]'])):
             self.assert_particle_props(child, exp_name, Particle.from_string(exp_name.rstrip(' [0]')).mass)
 
-
-def test_generate_nbody_naive():
-    """Currently only tests that no errors are raised when the function is called."""
-    dc = {'D+': [{'bf': 1,
-                  'fs': ['K-', 'pi+', 'pi+',
-                         {'pi0': [{'bf': 1, 'fs': ['gamma', 'gamma']}]},
-                         ],
-                  'model': 'PHSP', 'model_params': ''}]
-          }
-
-    events = generate_nbody_naive(dc, 1)
-    print(events)

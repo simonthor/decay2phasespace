@@ -1,10 +1,8 @@
 from phasespace import GenParticle
 import numpy as np
 from particle import Particle
-import tensorflow as tf
 import tensorflow_probability as tfp
-
-from typing import Union
+import tensorflow as tf
 
 
 def unique_name(name: str, preexisting_particles: set[str]) -> str:
@@ -52,7 +50,7 @@ def create_mass_func(particle: Particle):
     return mass_func
 
 
-def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = set()) -> GenParticle:
+def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = None) -> GenParticle:
     """Create a random GenParticle by recursively traversing a dict from decaylanguage.
 
     Parameters
@@ -73,6 +71,9 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = set
     - relies on an external python for-loop for generating events
     TODO: cache results of input GenParticle to make it faster. Using cache decorator or class
     """
+    if preexisting_particles is None:
+        preexisting_particles = set()
+
     mother = list(decaychain.keys())[0]     # Get the only key inside the dict
     decaymodes = decaychain[mother]
     # TODO: replace with tnp in the future
@@ -93,31 +94,3 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = set
 
     mother_particle = Particle.from_string(mother)
     return GenParticle(unique_name(mother, preexisting_particles), create_mass_func(mother_particle)).set_children(*daughter_gens)
-
-
-def generate_nbody_naive(decaychain: dict, nevents: int) -> list[tuple[tf.Tensor, dict[str, tf.Tensor]]]:
-    """Generate events from a full decay
-    Parameters
-    ----------
-    decaychain : dict
-        Dict describing a decay.
-        Can contain multiple different ways that a particle can decay in.
-    nevents : int
-        Number of events that should be generated
-
-    Returns
-    -------
-    events : list[dict[str, tf.Tensor]]
-        list of all the generated events and the four-momenta of the final state particles.
-    Notes
-    -----
-    This implementation is very slow and inefficient.
-    A better version will be made later.
-    """
-    events = []
-    for i in range(nevents):
-        particle = recursively_traverse(decaychain)
-        print('finished creating a GenParticle')
-        events.append(particle.generate(1))
-
-    return events
