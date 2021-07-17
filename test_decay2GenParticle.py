@@ -21,7 +21,12 @@ class TestRecursivelyTraverse:
     @staticmethod
     def assert_particle_props(particle: GenParticle, name: str, mass) -> None:
         assert particle.name == name
-        assert particle.get_mass() == mass
+        if particle.has_fixed_mass:
+            assert particle.get_mass() == mass
+            assert particle.get_mass().dtype == tf.float64
+        else:
+            # TODO add test for mass here, even when mass is not fixed
+            ...
 
     # TODO: implement more tests with other chains
     def test_single_chain(self):
