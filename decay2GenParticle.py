@@ -2,6 +2,9 @@ from phasespace import GenParticle
 import numpy as np
 from particle import Particle
 import tensorflow as tf
+import tensorflow_probability as tfp
+
+from typing import Union
 
 
 def unique_name(name: str, preexisting_particles: set[str]) -> str:
@@ -32,6 +35,23 @@ def unique_name(name: str, preexisting_particles: set[str]) -> str:
     return name
 
 
+def create_mass_func(particle: Particle):
+    """Function inspired by test in phasespace."""
+    if particle.width <= 0:
+        return tf.cast(particle.mass, tf.float64)
+
+    def mass_func(min_mass, max_mass, n_events):
+        min_mass = tf.cast(min_mass, tf.float64)
+        max_mass = tf.cast(max_mass, tf.float64)
+        particle_width = tf.cast(particle.width, tf.float64)
+        particle_mass = tf.cast(particle.mass, tf.float64)
+        return tfp.distributions.TruncatedNormal(loc=particle_mass,
+                                                 scale=particle_width,
+                                                 low=min_mass,
+                                                 high=max_mass).sample(sample_shape=(n_events,))
+    return mass_func
+
+
 def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = set()) -> GenParticle:
     """Create a random GenParticle by recursively traversing a dict from decaylanguage.
 
@@ -50,9 +70,8 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = set
     -----
     This implementation is slow since it
     - gets the particle mass every time from the particle package
-    - relies on an external python for-loop
-    TODO: cache results of input GenParticle to make it faster and work at all.
-    Decorator? Class?
+    - relies on an external python for-loop for generating events
+    TODO: cache results of input GenParticle to make it faster. Using cache decorator or class
     """
     mother = list(decaychain.keys())[0]     # Get the only key inside the dict
     decaymodes = decaychain[mother]
@@ -62,9 +81,9 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = set
     daughter_particles = decaymodes[i]['fs']
     daughter_gens = []
     for daughter_name in daughter_particles:
-        # TODO: implement mass distribution function here
         if isinstance(daughter_name, str):
-            daughter = GenParticle(unique_name(daughter_name, preexisting_particles), Particle.from_string(daughter_name).mass)
+            particle = Particle.from_string(daughter_name)
+            daughter = GenParticle(unique_name(daughter_name, preexisting_particles), create_mass_func(particle))
         elif isinstance(daughter_name, dict):
             daughter = recursively_traverse(daughter_name, preexisting_particles)
         else:
@@ -72,7 +91,8 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = set
                             f'but found of type {type(daughter_name)}')
         daughter_gens.append(daughter)
 
-    return GenParticle(unique_name(mother, preexisting_particles), Particle.from_string(mother).mass).set_children(*daughter_gens)
+    mother_particle = Particle.from_string(mother)
+    return GenParticle(unique_name(mother, preexisting_particles), create_mass_func(mother_particle)).set_children(*daughter_gens)
 
 
 def generate_nbody_naive(decaychain: dict, nevents: int) -> list[tuple[tf.Tensor, dict[str, tf.Tensor]]]:
@@ -97,6 +117,7 @@ def generate_nbody_naive(decaychain: dict, nevents: int) -> list[tuple[tf.Tensor
     events = []
     for i in range(nevents):
         particle = recursively_traverse(decaychain)
+        print('finished creating a GenParticle')
         events.append(particle.generate(1))
 
     return events
