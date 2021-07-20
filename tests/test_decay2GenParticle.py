@@ -1,6 +1,6 @@
 from decay2GenParticle import *
 import pytest
-
+from pprint import pprint
 
 @pytest.mark.parametrize(
     'name,expected,preexisting_names',
@@ -46,3 +46,16 @@ class TestRecursivelyTraverse:
         grandchildren = sorted_children[-1].children
         for child, exp_name in zip(sorted(grandchildren, key=lambda c: c.name), sorted(['gamma', 'gamma [0]'])):
             self.assert_particle_props(child, exp_name, Particle.from_string(exp_name.rstrip(' [0]')).mass)
+
+
+def test_build_gen_particle_tree():
+    dc = {'D+': [{'bf': 1,
+                  'fs': ['K-', 'pi+', 'pi+',
+                         {'pi0': [{'bf': 1, 'fs': ['gamma', 'gamma']}]},
+                         ],
+                  'model': 'PHSP', 'model_params': ''}]
+          }
+    gen_dc = build_gen_particle_tree(dc)
+    assert gen_dc == dc
+    assert all(isinstance(key, GenParticle) for key in gen_dc.keys())
+    pprint(gen_dc)

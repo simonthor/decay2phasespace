@@ -94,3 +94,49 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = Non
 
     mother_particle = Particle.from_string(mother)
     return GenParticle(unique_name(mother, preexisting_particles), create_mass_func(mother_particle)).set_children(*daughter_gens)
+
+
+def build_gen_particle_tree(decaychain: dict, preexisting_particles: set[str] = None):
+    """Create a list of GenParticles by recursively traversing a dict from decaylanguage.
+    Parameters
+    ----------
+    decaychain: dict
+        Decay chain with the format from decaylanguage
+    preexisting_particles : set
+        names of all particles that have already been created.
+
+    Returns
+    -------
+    particle_dict : dict[GenParticle]
+        The same decaychain dict but with GenParticles replacing all particle names.
+
+    Notes
+    -----
+    This will modify the decaychain dict directly.
+    Pass in a copy if you plan on using the dict elsewhere.
+    """
+    if preexisting_particles is None:
+        preexisting_particles = set()
+
+    mother = list(decaychain.keys())[0]  # Get the only key inside the dict
+    for dm in decaychain[mother]:
+        daughter_particles = dm['fs']
+        daughter_gens = []
+        for daughter_name in daughter_particles:
+            if isinstance(daughter_name, str):
+                particle = Particle.from_string(daughter_name)
+                daughter = GenParticle(unique_name(daughter_name, preexisting_particles), create_mass_func(particle))
+            elif isinstance(daughter_name, dict):
+                daughter = build_gen_particle_tree(daughter_name, preexisting_particles)
+            else:
+                raise TypeError(f'Expected elements in decaychain["fs"] to only be str or dict '
+                                f'but found of type {type(daughter_name)}')
+            daughter_gens.append(daughter)
+        dm['fs'] = daughter_gens
+
+    mother_particle = Particle.from_string(mother)
+    mother_gen = GenParticle(unique_name(mother, preexisting_particles), create_mass_func(mother_particle))
+    decaychain[mother_gen] = decaychain[mother]
+    del decaychain[mother]
+
+    return decaychain
