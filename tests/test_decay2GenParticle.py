@@ -44,4 +44,3 @@ class TestRecursivelyTraverse:
         grandchildren = sorted_children[-1].children
         for child, exp_name in zip(sorted(grandchildren, key=lambda c: c.name), sorted(['gamma', 'gamma [0]'])):
             self.assert_particle_props(child, exp_name, Particle.from_string(exp_name.rstrip(' [0]')).mass)
-

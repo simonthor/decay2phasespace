@@ -1,5 +1,4 @@
 from phasespace import GenParticle
-import numpy as np
 from particle import Particle
 import tensorflow_probability as tfp
 import tensorflow as tf
@@ -76,9 +75,9 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = Non
 
     mother = list(decaychain.keys())[0]     # Get the only key inside the dict
     decaymodes = decaychain[mother]
-    # TODO: replace with tnp in the future
-    # TODO: make multiple choices at once in a future version
-    i = np.random.choice(range(len(decaymodes)), p=[dm['bf'] for dm in decaymodes])
+    # TODO: make multiple choices at once in a future version by changing the last number in input to categorical.
+    #  Also count all occurrences and create for loop over these.
+    i = int(tf.random.categorical(tf.math.log(tf.cast([[dm['bf'] for dm in decaymodes]], dtype=tf.float64)), 1))
     daughter_particles = decaymodes[i]['fs']
     daughter_gens = []
     for daughter_name in daughter_particles:
