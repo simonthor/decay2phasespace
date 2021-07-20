@@ -10,7 +10,9 @@ import pytest
         ('b', 'b [0]', {'b'}),
         ('pi0', 'pi0 [0]', {'pi0', 'pi+'}),
         ('name with [', 'name with [', {'a', 'b', 'name with'}),
-        ('name with [', 'name with [ [0]', {'name with ['})
+        ('name with [', 'name with [ [0]', {'name with ['}),
+        ('a', 'a [1]', {'a', 'a [0]'}),
+        ('a', 'a [2]', {'a', 'a [0]', 'a [1]'})
     ]
 )
 def test_unique_name(name: str, expected: str, preexisting_names: set) -> None:

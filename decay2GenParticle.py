@@ -28,6 +28,7 @@ def unique_name(name: str, preexisting_particles: set[str]) -> str:
     i = 1
     while name in preexisting_particles:
         name = name[:name.rfind('[')] + f'[{str(i)}]'
+        i += 1
     preexisting_particles.add(name)
     return name
 
