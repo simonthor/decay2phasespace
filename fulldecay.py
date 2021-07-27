@@ -4,6 +4,7 @@ import tensorflow_probability as tfp
 import tensorflow as tf
 
 from typing import Callable, Sequence, Union
+import itertools
 # TODO might remove 2 lines below
 from collections import namedtuple
 decay = namedtuple('decay', ['probability', 'gen_particle'])
@@ -176,7 +177,6 @@ def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = No
                                 f'but found of type {type(daughter_name)}')
             # TODO multiply probabilities to get the correct probability for each decay mode
             daughter_gens.append(daughter)
-        # TODO This needs to be changed to account for multiple daughters.
-        #  Might need another recursive call to a different function just to create all GenParticles.
-        GenParticle(_unique_name(mother_name, preexisting_particles), _get_particle_mass(mother_name)).set_children(
-            *daughter_gens)
+        for daughter_combination in itertools.product(*daughter_gens):
+            GenParticle(_unique_name(mother_name, preexisting_particles), _get_particle_mass(mother_name)).set_children(
+                *daughter_combination)
