@@ -40,13 +40,13 @@ class TestRecursivelyTraverse:
                       'model': 'PHSP', 'model_params': ''}]
               }
         gen = recursively_traverse(dc)
-        self.assert_particle_props(gen, 'D+', Particle.from_string('D+').mass)
+        self.assert_particle_props(gen, 'D+', Particle.find('D+').mass)
         sorted_children = sorted(gen.children, key=lambda c: c.name)
         for child, exp_name in zip(sorted_children, sorted(['K-', 'pi+', 'pi+ [0]', 'pi0'])):
-            self.assert_particle_props(child, exp_name, Particle.from_string(exp_name.rstrip(' [0]')).mass)
+            self.assert_particle_props(child, exp_name, Particle.find(exp_name.rstrip(' [0]')).mass)
         grandchildren = sorted_children[-1].children
         for child, exp_name in zip(sorted(grandchildren, key=lambda c: c.name), sorted(['gamma', 'gamma [0]'])):
-            self.assert_particle_props(child, exp_name, Particle.from_string(exp_name.rstrip(' [0]')).mass)
+            self.assert_particle_props(child, exp_name, Particle.find(exp_name.rstrip(' [0]')).mass)
 
 
 def test_build_gen_particle_tree():

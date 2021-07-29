@@ -124,7 +124,7 @@ def _get_particle_mass(name: str, tolerance) -> Union[Callable, float]:
     TODO try to cache results for this function in the future for speedup.
     TODO support other mass functions than truncated normal in the future
     """
-    particle = Particle.from_string(name)
+    particle = Particle.find(name)
 
     if particle.width <= tolerance:
         return tf.cast(particle.mass, tf.float64)
@@ -169,6 +169,7 @@ def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = No
         for daughter_name in daughter_particles:
             if isinstance(daughter_name, str):
                 daughter = GenParticle(_unique_name(daughter_name, preexisting_particles), _get_particle_mass(daughter_name))
+                daughter = [daughter]
             elif isinstance(daughter_name, dict):
                 # TODO account for when multiple GenParticle instances are returned as daughter
                 probabilities, daughter = _recursively_traverse(daughter_name, preexisting_particles)
@@ -177,6 +178,8 @@ def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = No
                                 f'but found of type {type(daughter_name)}')
             # TODO multiply probabilities to get the correct probability for each decay mode
             daughter_gens.append(daughter)
+        all_combinations = []
         for daughter_combination in itertools.product(*daughter_gens):
-            GenParticle(_unique_name(mother_name, preexisting_particles), _get_particle_mass(mother_name)).set_children(
-                *daughter_combination)
+            all_combinations.append(GenParticle(_unique_name(mother_name, preexisting_particles), _get_particle_mass(mother_name)).set_children(
+                *daughter_combination))
+        return all_combinations     # TODO return probabilities. Use zip above

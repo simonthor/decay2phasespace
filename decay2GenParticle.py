@@ -83,7 +83,7 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = Non
     daughter_gens = []
     for daughter_name in daughter_particles:
         if isinstance(daughter_name, str):
-            particle = Particle.from_string(daughter_name)
+            particle = Particle.find(daughter_name)
             daughter = GenParticle(unique_name(daughter_name, preexisting_particles), create_mass_func(particle))
         elif isinstance(daughter_name, dict):
             daughter = recursively_traverse(daughter_name, preexisting_particles)
@@ -92,7 +92,7 @@ def recursively_traverse(decaychain: dict, preexisting_particles: set[str] = Non
                             f'but found of type {type(daughter_name)}')
         daughter_gens.append(daughter)
 
-    mother_particle = Particle.from_string(mother)
+    mother_particle = Particle.find(mother)
     return GenParticle(unique_name(mother, preexisting_particles), create_mass_func(mother_particle)).set_children(*daughter_gens)
 
 
@@ -124,7 +124,7 @@ def build_gen_particle_tree(decaychain: dict, preexisting_particles: set[str] = 
         daughter_gens = []
         for daughter_name in daughter_particles:
             if isinstance(daughter_name, str):
-                particle = Particle.from_string(daughter_name)
+                particle = Particle.find(daughter_name)
                 daughter = GenParticle(unique_name(daughter_name, preexisting_particles), create_mass_func(particle))
             elif isinstance(daughter_name, dict):
                 daughter = build_gen_particle_tree(daughter_name, preexisting_particles)
@@ -134,7 +134,7 @@ def build_gen_particle_tree(decaychain: dict, preexisting_particles: set[str] = 
             daughter_gens.append(daughter)
         dm['fs'] = daughter_gens
 
-    mother_particle = Particle.from_string(mother)
+    mother_particle = Particle.find(mother)
     mother_gen = GenParticle(unique_name(mother, preexisting_particles), create_mass_func(mother_particle))
     decaychain[mother_gen] = decaychain[mother]
     del decaychain[mother]
