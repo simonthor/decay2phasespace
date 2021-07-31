@@ -59,17 +59,17 @@ class FullDecay:
         list[tuple]
             All the four-momenta and their corresponding weights. Each entry in the list correspond to a particle generated in
         """
-        rand_i = tf.random.categorical(
-            tnp.log([dm[0] for dm in self.gen_particles]), (n_events,))
-        dec_indices, _, counts = tf.unique_with_counts(rand_i)
-
+        # Input to tf.random.categorical must be 2D
+        rand_i = tf.random.categorical(tnp.log([[dm[0] for dm in self.gen_particles]]), n_events)
+        # Input to tf.unique_with_counts must be 1D
+        dec_indices, _, counts = tf.unique_with_counts(rand_i[0])
+        counts = tf.cast(counts, tf.int64)
         events = []
         for i, n in zip(dec_indices, counts):
             events.append(self.gen_particles[i][1].generate(n, normalize_weights=False, *args, **kwargs))
 
         if normalize_weights:
-            # TODO
-            ...
+            raise NotImplementedError
 
         return events
 
@@ -135,12 +135,11 @@ def _get_particle_mass(name: str, tolerance=1e-10) -> Union[Callable, float]:
         min_mass = tf.cast(min_mass, tf.float64)
         max_mass = tf.cast(max_mass, tf.float64)
         particle_width = tf.cast(particle.width, tf.float64)
-        particle_mass = tf.cast(particle.mass, tf.float64)
+        particle_mass = tf.broadcast_to(tf.cast(particle.mass, tf.float64), shape=(n_events,))
         return tfp.distributions.TruncatedNormal(loc=particle_mass,
                                                  scale=particle_width,
                                                  low=min_mass,
-                                                 high=max_mass).sample(sample_shape=(n_events,))
-
+                                                 high=max_mass).sample()
     return mass_func
 
 

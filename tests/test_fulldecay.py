@@ -43,5 +43,8 @@ class TestGenerate:
     # TODO merge with class above?
     def test_single_chain(self):
         container = FullDecay.from_dict(dplus_single)
-        container.generate(n_events=100)
+        print(container.generate(n_events=100))
 
+    def test_branching_children(self):
+        container = FullDecay.from_dict(pi0_4branches)
+        print(container.generate(100))
