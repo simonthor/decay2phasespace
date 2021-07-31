@@ -2,19 +2,17 @@ from phasespace import GenParticle
 from particle import Particle
 import tensorflow_probability as tfp
 import tensorflow as tf
+import tensorflow.experimental.numpy as tnp
 
 from typing import Callable, Sequence, Union
 import itertools
-# TODO might remove 2 lines below
-from collections import namedtuple
-decay = namedtuple('decay', ['probability', 'gen_particle'])
 
 
 class FullDecay:
     """
     A container that works like GenParticle that can handle multiple decays
     """
-    def __init__(self, gen_particles: Sequence[Sequence[float, GenParticle]]):
+    def __init__(self, gen_particles: list[tuple[float, GenParticle]]):
         """
         Create an instance of FullDecay
 
@@ -23,7 +21,7 @@ class FullDecay:
         gen_particles : Sequence[Sequence[float, GenParticle]]
             All the GenParticles and their corresponding probabilities.
             The list must be of the format [[probability, GenParticle instance], [probability, ...
-            TODO format might change
+            TODO input format might change
         """
         self.gen_particles = gen_particles
 
@@ -41,6 +39,7 @@ class FullDecay:
             The created FullDecay object.
         """
         gen_particles = _recursively_traverse(dec_dict)
+        return cls(gen_particles)
 
     def generate(self, n_events: int, normalize_weights: bool = False, *args, **kwargs) -> list[tuple]:
         """
@@ -75,6 +74,7 @@ class FullDecay:
         return events
 
 
+# TODO find good value of tolerance (make relative?)
 def _unique_name(name: str, preexisting_particles: set[str]) -> str:
     """
     Create a string that does not exist in preexisting_particles based on name.
@@ -105,7 +105,7 @@ def _unique_name(name: str, preexisting_particles: set[str]) -> str:
     return name
 
 
-def _get_particle_mass(name: str, tolerance) -> Union[Callable, float]:
+def _get_particle_mass(name: str, tolerance=1e-10) -> Union[Callable, float]:
     """
     Get mass or mass function of particle using the particle package.
     Parameters
@@ -142,7 +142,7 @@ def _get_particle_mass(name: str, tolerance) -> Union[Callable, float]:
     return mass_func
 
 
-def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = None) -> tuple[GenParticle]:
+def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = None, tolerance: float = 1e-10) -> list[tuple[float, GenParticle]]:
     """
     Create all possible GenParticles by recursively traversing a dict from decaylanguage.
 
@@ -157,29 +157,38 @@ def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = No
     particle : GenParticle
         The generated particle
     """
+    mother_name = list(decaychain.keys())[0]  # Get the only key inside the dict
+
     if preexisting_particles is None:
         preexisting_particles = set()
+        mother_mass = Particle.find(mother_name).mass
+    else:
+        mother_mass = _get_particle_mass(mother_name, tolerance=tolerance)
 
-    mother_name = list(decaychain.keys())[0]  # Get the only key inside the dict
-    decaymodes = decaychain[mother_name]
-    for dm in decaymodes:
-        probability = dm['bf']
+    mother_name = _unique_name(mother_name, preexisting_particles)
+
+    decay_modes = decaychain[mother_name]
+    all_decays = []
+    for dm in decay_modes:
+        dm_probability = dm['bf']
         daughter_particles = dm['fs']
         daughter_gens = []
+
         for daughter_name in daughter_particles:
             if isinstance(daughter_name, str):
                 daughter = GenParticle(_unique_name(daughter_name, preexisting_particles), _get_particle_mass(daughter_name))
-                daughter = [daughter]
+                daughter = [(1., daughter)]
             elif isinstance(daughter_name, dict):
-                # TODO account for when multiple GenParticle instances are returned as daughter
-                probabilities, daughter = _recursively_traverse(daughter_name, preexisting_particles)
+                daughter = _recursively_traverse(daughter_name, preexisting_particles)
             else:
                 raise TypeError(f'Expected elements in decaychain["fs"] to only be str or dict '
                                 f'but found of type {type(daughter_name)}')
-            # TODO multiply probabilities to get the correct probability for each decay mode
             daughter_gens.append(daughter)
-        all_combinations = []
+
         for daughter_combination in itertools.product(*daughter_gens):
-            all_combinations.append(GenParticle(_unique_name(mother_name, preexisting_particles), _get_particle_mass(mother_name)).set_children(
-                *daughter_combination))
-        return all_combinations     # TODO return probabilities. Use zip above
+            p = tnp.prod([decay[0] for decay in daughter_combination]) * dm_probability
+            one_decay = GenParticle(mother_name, mother_mass).set_children(
+                *[decay[1] for decay in daughter_combination])
+            all_decays.append((p, one_decay))
+
+    return all_decays
