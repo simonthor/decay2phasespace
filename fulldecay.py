@@ -60,7 +60,7 @@ class FullDecay:
             All the four-momenta and their corresponding weights. Each entry in the list correspond to a particle generated in
         """
         rand_i = tf.random.categorical(
-            tf.math.log(tf.cast([[dm[0] for dm in self.gen_particles]], dtype=tf.float64)), n_events)
+            tnp.log([dm[0] for dm in self.gen_particles]), (n_events,))
         dec_indices, _, counts = tf.unique_with_counts(rand_i)
 
         events = []
@@ -74,7 +74,6 @@ class FullDecay:
         return events
 
 
-# TODO find good value of tolerance (make relative?)
 def _unique_name(name: str, preexisting_particles: set[str]) -> str:
     """
     Create a string that does not exist in preexisting_particles based on name.
@@ -105,6 +104,7 @@ def _unique_name(name: str, preexisting_particles: set[str]) -> str:
     return name
 
 
+# TODO find good value of tolerance (make relative?)
 def _get_particle_mass(name: str, tolerance=1e-10) -> Union[Callable, float]:
     """
     Get mass or mass function of particle using the particle package.
@@ -112,6 +112,8 @@ def _get_particle_mass(name: str, tolerance=1e-10) -> Union[Callable, float]:
     ----------
     name : str
         Name of the particle. Name must be recognizable by the particle package.
+    tolerance : float
+        See _recursively_traverse
 
     Returns
     -------
@@ -152,9 +154,12 @@ def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = No
         Decay chain with the format from decaylanguage
     preexisting_particles : set
         names of all particles that have already been created.
+    tolerance : float
+        Minimum mass width for a particle to set a non-constant mass to a particle.
+
     Returns
     -------
-    particle : GenParticle
+    list[tuple[float, GenParticle]]
         The generated particle
     """
     mother_name = list(decaychain.keys())[0]  # Get the only key inside the dict
@@ -165,9 +170,10 @@ def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = No
     else:
         mother_mass = _get_particle_mass(mother_name, tolerance=tolerance)
 
-    mother_name = _unique_name(mother_name, preexisting_particles)
-
+    # This is in the form of dicts
     decay_modes = decaychain[mother_name]
+    mother_name = _unique_name(mother_name, preexisting_particles)
+    # This will contain GenParticle instances and their probabilities
     all_decays = []
     for dm in decay_modes:
         dm_probability = dm['bf']
