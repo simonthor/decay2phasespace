@@ -1,6 +1,8 @@
 from fulldecay import FullDecay
-from numpy.testing import assert_almost_equal
 from example_decay_chains import *
+
+from numpy.testing import assert_almost_equal
+import pytest
 # TODO test that mass functions are created properly
 
 
@@ -41,10 +43,16 @@ class TestFromDict:
 class TestGenerate:
     """Wrapper class for all tests for the FullDecay.generate function"""
     # TODO merge with class above?
-    def test_single_chain(self):
+    @pytest.mark.parametrize('norm', (True, False))
+    def test_single_chain(self, norm):
         container = FullDecay.from_dict(dplus_single)
-        print(container.generate(n_events=100))
+        return_args = container.generate(n_events=100, normalize_weights=norm)
+        assert len(return_args) == 2 if norm else 3
+        print(return_args)
 
-    def test_branching_children(self):
+    @pytest.mark.parametrize('norm', (True, False))
+    def test_branching_children(self, norm):
         container = FullDecay.from_dict(pi0_4branches)
-        print(container.generate(100))
+        return_args = container.generate(100, normalize_weights=norm)
+        assert len(return_args) == 2 if norm else 3
+        print(return_args)

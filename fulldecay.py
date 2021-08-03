@@ -41,7 +41,7 @@ class FullDecay:
         gen_particles = _recursively_traverse(dec_dict)
         return cls(gen_particles)
 
-    def generate(self, n_events: int, normalize_weights: bool = False, *args, **kwargs) -> list[tuple]:
+    def generate(self, n_events: int, normalize_weights: bool = False, *args, **kwargs) -> Union[tuple[tf.Tensor, tf.Tensor], tuple[tf.Tensor, tf.Tensor, tf.Tensor]]:
         """
         Generate four-momentum vectors from the decay(s).
 
@@ -50,28 +50,36 @@ class FullDecay:
         n_events : int
             Total number of events combined, for all the decays.
         normalize_weights : bool
-            TODO: implement by just dividing all weights by the maximum?
+            Normalize weights according to all events generated. This also changes the return values.
+            See the phasespace documentation for more details.
         args, kwargs
             Additional parameters passed to all calls of GenParticle.generate
 
         Returns
         -------
-        list[tuple]
-            All the four-momenta and their corresponding weights. Each entry in the list correspond to a particle generated in
+        The arguments returned by GenParticle.generate are returned. See the phasespace documentation for details.
+        However, instead of being 2 or 3 tensors, it is 2 or 3 lists of tensors, each entry in the lists corresponding
+        to the return arguments from the corresponding GenParticle instances in self.gen_particles.
+        Note that when normalize_weights is True, the weights are normalized to the maximum of all returned events.
         """
         # Input to tf.random.categorical must be 2D
         rand_i = tf.random.categorical(tnp.log([[dm[0] for dm in self.gen_particles]]), n_events)
         # Input to tf.unique_with_counts must be 1D
         dec_indices, _, counts = tf.unique_with_counts(rand_i[0])
         counts = tf.cast(counts, tf.int64)
-        events = []
+        weights, max_weights, events = [], [], []
         for i, n in zip(dec_indices, counts):
-            events.append(self.gen_particles[i][1].generate(n, normalize_weights=False, *args, **kwargs))
+            weight, max_weight, four_vectors = self.gen_particles[i][1].generate(n, normalize_weights=False, *args, **kwargs)
+            weights.append(weight)
+            max_weights.append(max_weight)
+            events.append(four_vectors)
 
         if normalize_weights:
-            raise NotImplementedError
+            total_max = tnp.max([tnp.max(mw) for mw in max_weights])
+            normed_weights = [w / total_max for w in weights]
+            return normed_weights, events
 
-        return events
+        return weights, max_weights, events
 
 
 def _unique_name(name: str, preexisting_particles: set[str]) -> str:
