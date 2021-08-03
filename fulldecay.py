@@ -18,7 +18,7 @@ class FullDecay:
 
         Parameters
         ----------
-        gen_particles : Sequence[Sequence[float, GenParticle]]
+        gen_particles : list[tuple[float, GenParticle]]
             All the GenParticles and their corresponding probabilities.
             The list must be of the format [[probability, GenParticle instance], [probability, ...
             TODO input format might change
@@ -26,7 +26,7 @@ class FullDecay:
         self.gen_particles = gen_particles
 
     @classmethod
-    def from_dict(cls, dec_dict: dict) -> "FullDecay":
+    def from_dict(cls, dec_dict: dict):
         """
         Create a FullDecay instance from a dict in the decaylanguage format.
         Parameters
@@ -41,7 +41,8 @@ class FullDecay:
         gen_particles = _recursively_traverse(dec_dict)
         return cls(gen_particles)
 
-    def generate(self, n_events: int, normalize_weights: bool = False, *args, **kwargs) -> Union[tuple[tf.Tensor, tf.Tensor], tuple[tf.Tensor, tf.Tensor, tf.Tensor]]:
+    def generate(self, n_events: int, normalize_weights: bool = False,
+                 *args, **kwargs) -> Union[tuple[tf.Tensor, tf.Tensor], tuple[tf.Tensor, tf.Tensor, tf.Tensor]]:
         """
         Generate four-momentum vectors from the decay(s).
 
