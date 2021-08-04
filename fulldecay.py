@@ -42,7 +42,7 @@ class FullDecay:
         return cls(gen_particles)
 
     def generate(self, n_events: int, normalize_weights: bool = False,
-                 *args, **kwargs) -> Union[tuple[tf.Tensor, tf.Tensor], tuple[tf.Tensor, tf.Tensor, tf.Tensor]]:
+                 **kwargs) -> Union[tuple[tf.Tensor, tf.Tensor], tuple[tf.Tensor, tf.Tensor, tf.Tensor]]:
         """
         Generate four-momentum vectors from the decay(s).
 
@@ -53,7 +53,7 @@ class FullDecay:
         normalize_weights : bool
             Normalize weights according to all events generated. This also changes the return values.
             See the phasespace documentation for more details.
-        args, kwargs
+        kwargs
             Additional parameters passed to all calls of GenParticle.generate
 
         Returns
@@ -70,7 +70,7 @@ class FullDecay:
         counts = tf.cast(counts, tf.int64)
         weights, max_weights, events = [], [], []
         for i, n in zip(dec_indices, counts):
-            weight, max_weight, four_vectors = self.gen_particles[i][1].generate(n, normalize_weights=False, *args, **kwargs)
+            weight, max_weight, four_vectors = self.gen_particles[i][1].generate(n, normalize_weights=False, **kwargs)
             weights.append(weight)
             max_weights.append(max_weight)
             events.append(four_vectors)
