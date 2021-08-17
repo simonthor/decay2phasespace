@@ -11,6 +11,7 @@ def gauss(mass, width):
         particle_width = tf.cast(width, tf.float64)
         particle_mass = tf.cast(mass, tf.float64)
         # TODO might even be able to change TruncatedGauss to regular Gauss
+        # TODO can obs always just be '', since it is not used?
         pdf = zfit.pdf.TruncatedGauss(mu=particle_mass, sigma=particle_width, low=min_mass, high=max_mass, obs='')
         return zfit.z.unstack_x(pdf.sample(n_events, limits=(min_mass, max_mass)))
     return mass_func
@@ -22,7 +23,8 @@ def breitwigner(mass, width):
         max_mass = tf.cast(max_mass, tf.float64)
         particle_width = tf.cast(width, tf.float64)
         particle_mass = tf.cast(mass, tf.float64)
-        # Are these input parameters correct?
+        # TODO Are these input parameters correct?
+        # TODO can obs always just be '', since it is not used?
         pdf = zfit.pdf.Cauchy(particle_mass, particle_width, '')
         return zfit.z.unstack_x(pdf.sample(n_events, limits=(min_mass, max_mass)))
     return mass_func
