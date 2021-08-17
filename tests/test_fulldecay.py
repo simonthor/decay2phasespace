@@ -49,7 +49,6 @@ def test_single_chain():
     assert gen.name == 'D+'
     assert {p.name for p in gen.children} == {'K-', 'pi+', 'pi+ [0]', 'pi0'}
     check_norm(container, n_events=1)
-    check_norm(container, n_events=100)
     (normed_weights, decay_list), _ = check_norm(container, n_events=100)
     assert len(decay_list) == 1
     events = decay_list[0]

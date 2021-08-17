@@ -4,8 +4,10 @@ import tensorflow_probability as tfp
 import tensorflow as tf
 import tensorflow.experimental.numpy as tnp
 
-from typing import Callable, Sequence, Union
+from typing import Callable, Union
 import itertools
+
+_MASS_WIDTH_TOLERANCE = 0.01
 
 
 class FullDecay:
@@ -26,19 +28,23 @@ class FullDecay:
         self.gen_particles = gen_particles
 
     @classmethod
-    def from_dict(cls, dec_dict: dict):
+    def from_dict(cls, dec_dict: dict, tolerance: float = _MASS_WIDTH_TOLERANCE):
         """
         Create a FullDecay instance from a dict in the decaylanguage format.
+
         Parameters
         ----------
         dec_dict : dict
+            The input dict from which the FullDecay object will be created from.
+        tolerance : float
+            Minimum mass width of the particle to use a mass function instead of assuming the mass to be constant.
 
         Returns
         -------
         FullDecay
             The created FullDecay object.
         """
-        gen_particles = _recursively_traverse(dec_dict)
+        gen_particles = _recursively_traverse(dec_dict, tolerance=tolerance)
         return cls(gen_particles)
 
     def generate(self, n_events: int, normalize_weights: bool = False,
@@ -114,7 +120,7 @@ def _unique_name(name: str, preexisting_particles: set[str]) -> str:
 
 
 # TODO find good value of tolerance (make relative?)
-def _get_particle_mass(name: str, tolerance=1e-10) -> Union[Callable, float]:
+def _get_particle_mass(name: str, tolerance=_MASS_WIDTH_TOLERANCE) -> Union[Callable, float]:
     """
     Get mass or mass function of particle using the particle package.
     Parameters
@@ -152,7 +158,7 @@ def _get_particle_mass(name: str, tolerance=1e-10) -> Union[Callable, float]:
     return mass_func
 
 
-def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = None, tolerance: float = 1e-10) -> list[tuple[float, GenParticle]]:
+def _recursively_traverse(decaychain: dict, preexisting_particles: set[str] = None, tolerance: float = _MASS_WIDTH_TOLERANCE) -> list[tuple[float, GenParticle]]:
     """
     Create all possible GenParticles by recursively traversing a dict from decaylanguage.
 
