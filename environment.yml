@@ -8,3 +8,4 @@ dependencies:
     - DecayLanguage
     - phasespace
     - particle
+    - zfit

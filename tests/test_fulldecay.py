@@ -41,7 +41,7 @@ def check_norm(full_decay: FullDecay, **kwargs) -> list[tuple]:
 
 def test_single_chain():
     """Test converting a decaylanguage dict with only one possible decay."""
-    container = FullDecay.from_dict(dplus_single)
+    container = FullDecay.from_dict(dplus_single, {})
     output_decay = container.gen_particles
     assert len(output_decay) == 1
     prob, gen = output_decay[0]
@@ -57,7 +57,7 @@ def test_single_chain():
 
 
 def test_branching_children():
-    container = FullDecay.from_dict(pi0_4branches)
+    container = FullDecay.from_dict(pi0_4branches, {})
     output_decays = container.gen_particles
     assert len(output_decays) == 4
     assert_almost_equal(sum(d[0] for d in output_decays), 1)
@@ -66,7 +66,7 @@ def test_branching_children():
 
 
 def test_branching_grandchilden():
-    container = FullDecay.from_dict(dplus_4grandbranches)
+    container = FullDecay.from_dict(dplus_4grandbranches, {})
     output_decays = container.gen_particles
     assert_almost_equal(sum(d[0] for d in output_decays), 1)
     check_norm(container, n_events=1)
@@ -75,9 +75,19 @@ def test_branching_grandchilden():
 
 
 def test_big_decay():
-    container = FullDecay.from_dict(dstarplus_big_decay)
+    container = FullDecay.from_dict(dstarplus_big_decay, {})
     output_decays = container.gen_particles
     assert_almost_equal(sum(d[0] for d in output_decays), 1)
     check_norm(container, n_events=1)
     (normed_weights, events), _ = check_norm(container, n_events=100)
     # TODO add more asserts here
+
+
+def test_mass_function():
+    from mass_functions import gauss, breitwigner
+    f = gauss(1., 1.)
+    sample = f(-1, 1, 10)
+    assert sample.shape == (10,)
+    f = breitwigner(1., 1.)
+    sample = f(-1, 1, 10)
+    assert sample.shape == (10,)
