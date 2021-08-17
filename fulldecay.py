@@ -37,6 +37,14 @@ class FullDecay:
         ----------
         dec_dict : dict
             The input dict from which the FullDecay object will be created from.
+        name2mass : dict
+            A dict containing particle names as keys and which mass function they have, e.g. 'gauss'.
+            If a particle name does not exist in this dict, a Cauchy function (TODO this will change), will be used.
+        mass_converter : dict
+            A dict with mass function names and their corresponding mass functions.
+            These functions should take the average particle mass and the mass width as inputs
+            and return a mass function that phasespace can understand.
+            This dict will be combined with the predefined mass functions in this package.
         tolerance : float
             Minimum mass width of the particle to use a mass function instead of assuming the mass to be constant.
 
@@ -154,7 +162,9 @@ def _get_particle_mass(name: str, mass_converter: dict, name2mass: dict,
     return mass_converter[mass_function_name](mass=particle.mass, width=particle.width)
 
 
-def _recursively_traverse(decaychain: dict, mass_converter: dict, name2mass: dict, preexisting_particles: set[str] = None, tolerance: float = _MASS_WIDTH_TOLERANCE) -> list[tuple[float, GenParticle]]:
+def _recursively_traverse(decaychain: dict, mass_converter: dict, name2mass: dict,
+                          preexisting_particles: set[str] = None,
+                          tolerance: float = _MASS_WIDTH_TOLERANCE) -> list[tuple[float, GenParticle]]:
     """
     Create all possible GenParticles by recursively traversing a dict from decaylanguage.
 
@@ -192,7 +202,8 @@ def _recursively_traverse(decaychain: dict, mass_converter: dict, name2mass: dic
 
         for daughter_name in daughter_particles:
             if isinstance(daughter_name, str):
-                daughter = GenParticle(_unique_name(daughter_name, preexisting_particles), _get_particle_mass(daughter_name, mass_converter, name2mass, tolerance=tolerance))
+                daughter = GenParticle(_unique_name(daughter_name, preexisting_particles),
+                                       _get_particle_mass(daughter_name, mass_converter, name2mass, tolerance=tolerance))
                 daughter = [(1., daughter)]
             elif isinstance(daughter_name, dict):
                 daughter = _recursively_traverse(daughter_name, mass_converter, name2mass, preexisting_particles)
