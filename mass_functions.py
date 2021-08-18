@@ -31,6 +31,7 @@ def breitwigner(mass, width):
 
 
 # TODO add relativistic Breit-Wigner, e.g.
+# See https://zfit.readthedocs.io/en/latest/_tmp/zfit-tutorials/components/60%20-%20Custom%20PDF.html
 class RelativisticCauchy(zfit.pdf.ZPDF):
     _N_OBS = 1  # dimension, can be omitted
     _PARAMS = ['mean', 'std']  # the name of the parameters

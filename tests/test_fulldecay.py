@@ -1,3 +1,5 @@
+import pytest
+
 from fulldecay import FullDecay
 from example_decay_chains import *
 
@@ -39,9 +41,15 @@ def check_norm(full_decay: FullDecay, **kwargs) -> list[tuple]:
     return all_return_args
 
 
+def test_name2mass_error():
+    """Test that an error is raised when """
+    with pytest.raises(KeyError):
+        FullDecay.from_dict(dplus_single, {'K-': 'BW', 'pi+': 'gauss', 'pi0': 'invalid function name'}, tolerance=1e-10)
+
+
 def test_single_chain():
     """Test converting a decaylanguage dict with only one possible decay."""
-    container = FullDecay.from_dict(dplus_single, {})
+    container = FullDecay.from_dict(dplus_single, {'K-': 'BW', 'pi+': 'gauss', 'pi0': 'gauss'})
     output_decay = container.gen_particles
     assert len(output_decay) == 1
     prob, gen = output_decay[0]
