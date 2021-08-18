@@ -158,7 +158,7 @@ def _get_particle_mass(name: str, name2mass: dict[str, str], mass_converter: dic
         return tf.cast(particle.mass, tf.float64)
     # If name does not exist in the predefined mass distributions, use Breit-Wigner
     # TODO change to rel-BW once that is implemented
-    mass_function_name = name2mass.get(name, 'BW')
+    mass_function_name = name2mass.get(name, 'gauss')
     return mass_converter[mass_function_name](mass=particle.mass, width=particle.width)
 
 

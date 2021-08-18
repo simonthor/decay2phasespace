@@ -49,13 +49,19 @@ def test_name2mass_error():
 
 def test_single_chain():
     """Test converting a decaylanguage dict with only one possible decay."""
-    container = FullDecay.from_dict(dplus_single, {'K-': 'BW', 'pi+': 'gauss', 'pi0': 'gauss'})
+    container = FullDecay.from_dict(dplus_single, {'pi+': 'gauss', 'pi0': 'gauss'}, tolerance=1e-10)
     output_decay = container.gen_particles
     assert len(output_decay) == 1
     prob, gen = output_decay[0]
     assert_almost_equal(prob, 1)
     assert gen.name == 'D+'
     assert {p.name for p in gen.children} == {'K-', 'pi+', 'pi+ [0]', 'pi0'}
+    for p in gen.children:
+        if 'pi0' == p.name[:3]:
+            assert not p.has_fixed_mass
+        else:
+            assert p.has_fixed_mass
+
     check_norm(container, n_events=1)
     (normed_weights, decay_list), _ = check_norm(container, n_events=100)
     assert len(decay_list) == 1
