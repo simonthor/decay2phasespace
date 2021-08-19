@@ -3,7 +3,7 @@ dplus_single = {'D+': [{'bf': 1,
                         'fs': ['K-', 'pi+', 'pi+',
                                {'pi0': [{'bf': 1, 'fs': ['gamma', 'gamma']}]},
                                ],
-                        'model': 'PHSP', 'model_params': ''}]
+                        'model': 'PHSP', 'model_params': '', 'zfit': 'gauss'}]
                 }
 
 pi0_4branches = {'pi0': [{'bf': 0.988228297, 'fs': ['gamma', 'gamma']},
