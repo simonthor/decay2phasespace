@@ -9,6 +9,7 @@ from typing import Callable, Union
 import itertools
 
 _MASS_WIDTH_TOLERANCE = 0.01
+_DEFAULT_MASS_FUNC = 'gauss'    # TODO change to rel-BW once that is implemented
 
 
 class FullDecay:
@@ -29,7 +30,7 @@ class FullDecay:
         self.gen_particles = gen_particles
 
     @classmethod
-    def from_dict(cls, dec_dict: dict, name2mass: dict[str, str], mass_converter: dict[str, Callable] = None, tolerance: float = _MASS_WIDTH_TOLERANCE):
+    def from_dict(cls, dec_dict: dict, mass_converter: dict[str, Callable] = None, tolerance: float = _MASS_WIDTH_TOLERANCE):
         """
         Create a FullDecay instance from a dict in the decaylanguage format.
 
@@ -37,10 +38,7 @@ class FullDecay:
         ----------
         dec_dict : dict
             The input dict from which the FullDecay object will be created from.
-        name2mass : dict
-            A dict containing particle names as keys and which mass function they have, e.g. 'gauss'.
-            If a particle name does not exist in this dict, a Cauchy function (TODO this will change), will be used.
-        mass_converter : dict
+        mass_converter : dict[str, Callable]
             A dict with mass function names and their corresponding mass functions.
             These functions should take the average particle mass and the mass width as inputs
             and return a mass function that phasespace can understand.
@@ -59,7 +57,7 @@ class FullDecay:
             # Combine the mass functions specified by the package to the mass functions specified from the input.
             total_mass_converter = {**_DEFAULT_CONVERTER, **mass_converter}
 
-        gen_particles = _recursively_traverse(dec_dict, name2mass, total_mass_converter, tolerance=tolerance)
+        gen_particles = _recursively_traverse(dec_dict, total_mass_converter, tolerance=tolerance)
         return cls(gen_particles)
 
     def generate(self, n_events: int, normalize_weights: bool = False,
@@ -134,7 +132,15 @@ def _unique_name(name: str, preexisting_particles: set[str]) -> str:
     return name
 
 
-def _get_particle_mass(name: str, name2mass: dict[str, str], mass_converter: dict[str, Callable],
+def _find_single_particle(name: str) -> Particle:
+    particles = Particle.findall(lambda p: p.name == name)
+    if len(particles) != 1:
+        raise ValueError(f'The given name "{name}" of the particle was not valid.'
+                         'The input dict probably had an invalid particle name in it.')
+    return particles[0]
+
+
+def _get_particle_mass(name: str, mass_converter: dict[str, Callable], mass_func: str,
                        tolerance: float = _MASS_WIDTH_TOLERANCE) -> Union[Callable, float]:
     """
     Get mass or mass function of particle using the particle package.
@@ -152,17 +158,15 @@ def _get_particle_mass(name: str, name2mass: dict[str, str], mass_converter: dic
         Otherwise, return a constant mass.
     TODO try to cache results for this function in the future for speedup.
     """
-    particle = Particle.find(name)
+    particle = _find_single_particle(name)
 
     if particle.width <= tolerance:
         return tf.cast(particle.mass, tf.float64)
     # If name does not exist in the predefined mass distributions, use Breit-Wigner
-    # TODO change to rel-BW once that is implemented
-    mass_function_name = name2mass.get(name, 'gauss')
-    return mass_converter[mass_function_name](mass=particle.mass, width=particle.width)
+    return mass_converter[mass_func](mass=particle.mass, width=particle.width)
 
 
-def _recursively_traverse(decaychain: dict, name2mass: dict[str, str], mass_converter: dict[str, Callable],
+def _recursively_traverse(decaychain: dict, mass_converter: dict[str, Callable],
                           preexisting_particles: set[str] = None, tolerance: float = _MASS_WIDTH_TOLERANCE) -> list[tuple[float, GenParticle]]:
     """
     Create all possible GenParticles by recursively traversing a dict from decaylanguage.
@@ -181,17 +185,17 @@ def _recursively_traverse(decaychain: dict, name2mass: dict[str, str], mass_conv
     list[tuple[float, GenParticle]]
         The generated particle
     """
-    mother_name = list(decaychain.keys())[0]  # Get the only key inside the dict
+    original_mother_name = list(decaychain.keys())[0]  # Get the only key inside the dict
 
     if preexisting_particles is None:
         preexisting_particles = set()
-        mother_mass = Particle.find(mother_name).mass
+        is_top_particle = True
     else:
-        mother_mass = _get_particle_mass(mother_name, name2mass, mass_converter, tolerance=tolerance)
+        is_top_particle = False
 
     # This is in the form of dicts
-    decay_modes = decaychain[mother_name]
-    mother_name = _unique_name(mother_name, preexisting_particles)
+    decay_modes = decaychain[original_mother_name]
+    mother_name = _unique_name(original_mother_name, preexisting_particles)
     # This will contain GenParticle instances and their probabilities
     all_decays = []
     for dm in decay_modes:
@@ -201,19 +205,26 @@ def _recursively_traverse(decaychain: dict, name2mass: dict[str, str], mass_conv
 
         for daughter_name in daughter_particles:
             if isinstance(daughter_name, str):
+                # TODO call _get_particle_mass instead? In that case, the function needs to be changed so that
+                # Always use constant mass for stable particles
                 daughter = GenParticle(_unique_name(daughter_name, preexisting_particles),
-                                       _get_particle_mass(daughter_name, name2mass, mass_converter,
-                                                          tolerance=tolerance))
+                                       _find_single_particle(daughter_name).mass)
                 daughter = [(1., daughter)]
             elif isinstance(daughter_name, dict):
-                daughter = _recursively_traverse(daughter_name, name2mass, mass_converter, preexisting_particles, tolerance=tolerance)
+                daughter = _recursively_traverse(daughter_name, mass_converter, preexisting_particles, tolerance=tolerance)
             else:
                 raise TypeError(f'Expected elements in decaychain["fs"] to only be str or dict '
-                                f'but found of type {type(daughter_name)}')
+                                f'but found an instance of type {type(daughter_name)}')
             daughter_gens.append(daughter)
 
         for daughter_combination in itertools.product(*daughter_gens):
             p = tnp.prod([decay[0] for decay in daughter_combination]) * dm_probability
+            if is_top_particle:
+                mother_mass = _find_single_particle(original_mother_name).mass
+            else:
+                mother_mass = _get_particle_mass(original_mother_name, mass_converter=mass_converter,
+                                                 mass_func=dm.get('zfit', _DEFAULT_MASS_FUNC), tolerance=tolerance)
+
             one_decay = GenParticle(mother_name, mother_mass).set_children(
                 *[decay[1] for decay in daughter_combination])
             all_decays.append((p, one_decay))
