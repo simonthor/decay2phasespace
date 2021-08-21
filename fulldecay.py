@@ -132,6 +132,14 @@ def _unique_name(name: str, preexisting_particles: set[str]) -> str:
     return name
 
 
+def _find_single_particle(name: str) -> Particle:
+    particles = Particle.findall(lambda p: p.name == name)
+    if len(particles) != 1:
+        raise ValueError(f'The given name "{name}" of the particle was not valid.'
+                         'The input dict probably had an invalid particle name in it.')
+    return particles[0]
+
+
 def _get_particle_mass(name: str, mass_converter: dict[str, Callable], mass_func: str,
                        tolerance: float = _MASS_WIDTH_TOLERANCE) -> Union[Callable, float]:
     """
@@ -150,7 +158,7 @@ def _get_particle_mass(name: str, mass_converter: dict[str, Callable], mass_func
         Otherwise, return a constant mass.
     TODO try to cache results for this function in the future for speedup.
     """
-    particle = Particle.find(name)
+    particle = _find_single_particle(name)
 
     if particle.width <= tolerance:
         return tf.cast(particle.mass, tf.float64)
@@ -197,21 +205,22 @@ def _recursively_traverse(decaychain: dict, mass_converter: dict[str, Callable],
 
         for daughter_name in daughter_particles:
             if isinstance(daughter_name, str):
-                # TODO this always uses the default right now. Make mass functions configurable here
+                # TODO call _get_particle_mass instead? In that case, the function needs to be changed so that
+                # Always use constant mass for stable particles
                 daughter = GenParticle(_unique_name(daughter_name, preexisting_particles),
-                                       _get_particle_mass(daughter_name, mass_converter=mass_converter, mass_func=_DEFAULT_MASS_FUNC, tolerance=tolerance))
+                                       _find_single_particle(daughter_name).mass)
                 daughter = [(1., daughter)]
             elif isinstance(daughter_name, dict):
                 daughter = _recursively_traverse(daughter_name, mass_converter, preexisting_particles, tolerance=tolerance)
             else:
                 raise TypeError(f'Expected elements in decaychain["fs"] to only be str or dict '
-                                f'but found of type {type(daughter_name)}')
+                                f'but found an instance of type {type(daughter_name)}')
             daughter_gens.append(daughter)
 
         for daughter_combination in itertools.product(*daughter_gens):
             p = tnp.prod([decay[0] for decay in daughter_combination]) * dm_probability
             if is_top_particle:
-                mother_mass = Particle.find(original_mother_name).mass
+                mother_mass = _find_single_particle(original_mother_name).mass
             else:
                 mother_mass = _get_particle_mass(original_mother_name, mass_converter=mass_converter,
                                                  mass_func=dm.get('zfit', _DEFAULT_MASS_FUNC), tolerance=tolerance)
