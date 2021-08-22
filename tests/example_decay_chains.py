@@ -19,7 +19,7 @@ dplus_4grandbranches = {'D+': [{'bf': 1.0,
    'model': 'PHSP',
    'model_params': ''}]}
 
-dstarplus_big_decay = {'D*(2010)+': [{'bf': 0.677,
+dstarplus_big_decay = {'D*+': [{'bf': 0.677,
    'fs': [{'D0': [{'bf': 1.0,
        'fs': ['K-', 'pi+'],
        'model': 'PHSP',
