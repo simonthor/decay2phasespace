@@ -65,7 +65,7 @@ def test_single_chain():
 
 
 def test_branching_children():
-    container = FullDecay.from_dict(pi0_4branches, {})
+    container = FullDecay.from_dict(pi0_4branches, tolerance=1e-10)
     output_decays = container.gen_particles
     assert len(output_decays) == 4
     assert_almost_equal(sum(d[0] for d in output_decays), 1)
@@ -89,10 +89,3 @@ def test_big_decay():
     check_norm(container, n_events=1)
     (normed_weights, events), _ = check_norm(container, n_events=100)
     # TODO add more asserts here
-
-
-def test_mass_function():
-    from mass_functions import gauss
-    f = gauss(1., 1.)
-    sample = f(-1, 1, 10)
-    assert sample.shape == (10,)
