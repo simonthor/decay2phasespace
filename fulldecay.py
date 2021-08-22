@@ -25,7 +25,9 @@ class FullDecay:
         gen_particles : list[tuple[float, GenParticle]]
             All the GenParticles and their corresponding probabilities.
             The list must be of the format [[probability, GenParticle instance], [probability, ...
-            TODO input format might change
+        Notes
+        -----
+        Input format might change
         """
         self.gen_particles = gen_particles
 
@@ -197,7 +199,6 @@ def _recursively_traverse(decaychain: dict, mass_converter: dict[str, Callable],
 
         for daughter_name in daughter_particles:
             if isinstance(daughter_name, str):
-                # TODO call _get_particle_mass instead? In that case, the function needs to be changed so that
                 # Always use constant mass for stable particles
                 daughter = GenParticle(_unique_name(daughter_name, preexisting_particles),
                                        Particle.from_evtgen_name(daughter_name).mass)
