@@ -39,7 +39,7 @@ def ref_mass_func(min_mass, max_mass, n_events):
     return kstar_mass
 
 
-@pytest.mark.parametrize('function', (mf.gauss, mf.breitwigner))
+@pytest.mark.parametrize('function', (mf.gauss, mf.breitwigner, mf.relativistic_breitwigner))
 @pytest.mark.parametrize('size', (1, 10))
 def test_shape(function: Callable, size: int, params: tuple = (1., 1.)):
     rng = tf.random.Generator.from_seed(1234)

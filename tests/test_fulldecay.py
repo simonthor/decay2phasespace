@@ -4,7 +4,6 @@ from fulldecay import FullDecay
 from example_decay_chains import *
 
 from numpy.testing import assert_almost_equal
-# TODO test that mass functions are created properly
 
 
 def check_norm(full_decay: FullDecay, **kwargs) -> list[tuple]:

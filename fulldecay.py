@@ -9,7 +9,7 @@ from typing import Callable, Union
 import itertools
 
 _MASS_WIDTH_TOLERANCE = 0.01
-_DEFAULT_MASS_FUNC = 'BW'    # TODO change to rel-BW once that is implemented
+_DEFAULT_MASS_FUNC = 'rel-BW'
 
 
 class FullDecay:
