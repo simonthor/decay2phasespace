@@ -1,6 +1,6 @@
 # decay2phasespace
 Make [decaylanguage](https://github.com/scikit-hep/decaylanguage) and [phasespace](https://github.com/zfit/phasespace) work together.
-Also uses [particle](https://github.com/scikit-hep/particle) and [zfit](https://github.com/zfit/zfit) (and pytest for tests).
+Also uses [particle](https://github.com/scikit-hep/particle), [zfit](https://github.com/zfit/zfit) and [zfit-physics](https://github.com/zfit/zfit-physics) (and pytest for tests).
 
 Currently in development stage. Anything can change at any time, including the repository name.
 

@@ -9,3 +9,4 @@ dependencies:
     - phasespace
     - particle
     - zfit
+    - git+https://github.com/zfit/zfit-physics  # TODO change this to just zfit-physics once new release comes out
